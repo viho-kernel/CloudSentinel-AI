@@ -1,0 +1,32 @@
+groups:
+  - name: cloudsentinel_sre_alerts
+    rules:
+      - alert: ServiceDown
+        expr: up{job="cloudsentinel-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          tier: platform
+        annotations:
+          summary: "CloudSentinel Microservice is DOWN"
+          description: "Instance {{ $labels.instance }} has been unreachable for more than 1 minute."
+
+      - alert: HighRequestLatency
+        expr: histogram_quantile(0.95, sum(rate(cloudsentinel_http_request_duration_seconds_bucket[5m])) by (le)) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+          tier: api
+        annotations:
+          summary: "High P95 Latency Detected (>500ms)"
+          description: "API p95 latency is {{ $value }}s on endpoint {{ $labels.endpoint }}."
+
+      - alert: CriticalVulnerabilitySpike
+        expr: sum(rate(cloudsentinel_vulnerabilities_detected_total{severity="CRITICAL"}[5m])) > 0.1
+        for: 1m
+        labels:
+          severity: high
+          tier: security
+        annotations:
+          summary: "Critical Infrastructure Vulnerability Surge"
+          description: "High volume of CRITICAL IaC misconfigurations detected in CI/CD pipeline."

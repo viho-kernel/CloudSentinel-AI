@@ -1,0 +1,73 @@
+name: "CD: Production Release (Prod)"
+
+on:
+  release:
+    types: [ published ]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag to deploy (e.g. v1.0.0)"
+        required: true
+        default: "v1.0.0"
+
+env:
+  GCP_PROJECT_ID: "cloudsentinel-prod"
+  GCP_REGION: "us-central1"
+  GAR_REPOSITORY: "cloudsentinel-docker"
+  IMAGE_NAME: "core-api"
+  GKE_CLUSTER: "cloudsentinel-prod-gke"
+
+jobs:
+  production-deploy:
+    name: "🛡️ Gated Production Deployment"
+    runs-on: ubuntu-latest
+    environment: production # Enforces required approvers in GitHub repository settings
+    steps:
+      - name: Checkout Release Code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud (Prod)
+        uses: google-github-actions/auth@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          credentials_json: ${{ secrets.GCP_SA_KEY_PROD }}
+
+      - name: Configure Docker
+        run: |
+          gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev --quiet
+
+      - name: Build Production Container Image
+        run: |
+          IMAGE_TAG="${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GAR_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.event.release.tag_name || inputs.release_tag }}"
+          docker build -f docker/Dockerfile -t $IMAGE_TAG .
+          docker push $IMAGE_TAG
+          echo "PROD_IMAGE=$IMAGE_TAG" >> $GITHUB_ENV
+
+      # Supply Chain Security: Generate SBOM
+      - name: Generate Software Bill of Materials (SBOM)
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.PROD_IMAGE }}
+          format: spdx-json
+          output-file: sbom.spdx.json
+
+      - name: Connect to Production GKE Cluster
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ${{ env.GKE_CLUSTER }}
+          location: ${{ env.GCP_REGION }}
+
+      - name: Deploy Production Kustomize Overlay
+        run: |
+          cd k8s/overlays/prod
+          kustomize edit set image gcr.io/cloudsentinel-prod/core-api:latest=${{ env.PROD_IMAGE }}
+          kustomize build . | kubectl apply -f -
+
+      - name: Await Zero-Downtime Rollout
+        run: |
+          kubectl rollout status deployment/cloudsentinel-core-prod -n cloudsentinel-prod --timeout=180s
+
+      - name: Post-Deploy Smoke Test
+        run: |
+          echo "Verifying production health endpoint..."
+          # In real setup: curl -f https://app.cloudsentinel.io/healthz

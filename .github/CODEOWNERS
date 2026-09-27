@@ -1,0 +1,22 @@
+# ==============================================================
+# Enterprise CODEOWNERS - Role-Based PR Review Governance
+# ==============================================================
+
+# Global fallback
+*                   @tech-leads
+
+# Application & Software Engineering
+/app/               @backend-engineers @fullstack-devs
+/tests/             @qa-automation-engineers @backend-engineers
+
+# Platform & Cloud Engineering
+/terraform/         @cloud-platform-engineers @devops-core
+/k8s/               @kubernetes-admins @cloud-platform-engineers
+
+# DevSecOps & Security
+/.github/workflows/ @devsecops-team @security-operations
+/docker/            @devsecops-team @cloud-platform-engineers
+
+# SRE & Observability
+/observability/     @sre-team @devops-core
+/scripts/           @sre-team @devsecops-team

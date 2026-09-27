@@ -1,0 +1,43 @@
+services:
+  cloudsentinel-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dev
+    container_name: cloudsentinel-core-api
+    ports:
+      - "8080:8080"
+    environment:
+      - ENVIRONMENT=local
+      - HOST=0.0.0.0
+      - PORT=8080
+      - LOG_LEVEL=DEBUG
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID:-cloudsentinel-local}
+    volumes:
+      - ../app:/app/app:ro
+    networks:
+      - cloudsentinel-net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/healthz')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.54.0
+    container_name: cloudsentinel-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../observability/alerts.yml:/etc/prometheus/alerts.yml:ro
+    networks:
+      - cloudsentinel-net
+    depends_on:
+      - cloudsentinel-api
+    restart: unless-stopped
+
+networks:
+  cloudsentinel-net:
+    driver: bridge

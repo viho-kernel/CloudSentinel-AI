@@ -1,0 +1,32 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: cloudsentinel-dev
+
+bases:
+  - ../../base
+
+nameSuffix: -dev
+
+commonLabels:
+  environment: dev
+
+replicas:
+  - name: cloudsentinel-core
+    count: 1
+
+patches:
+  - target:
+      kind: ConfigMap
+      name: cloudsentinel-config
+    patch: |-
+      - op: replace
+        path: /data/LOG_LEVEL
+        value: "DEBUG"
+  - target:
+      kind: Deployment
+      name: cloudsentinel-core
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/env/0/value
+        value: "dev"

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudsentinel-config
+  namespace: cloudsentinel
+data:
+  APP_NAME: "CloudSentinel AI"
+  HOST: "0.0.0.0"
+  PORT: "8080"
+  LOG_LEVEL: "INFO"
+  ENABLE_PROMETHEUS: "true"
+  GEMINI_MODEL: "gemini-2.5-flash"

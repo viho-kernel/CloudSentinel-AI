@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cloudsentinel-ingress
+  namespace: cloudsentinel-prod
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+    networking.gke.io/managed-certificates: "cloudsentinel-ssl-cert"
+    kubernetes.io/ingress.allow-http: "false"
+spec:
+  rules:
+  - host: app.cloudsentinel.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: cloudsentinel-service-prod
+            port:
+              number: 80

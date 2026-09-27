@@ -1,0 +1,55 @@
+name: "CD: Deploy to Development (Dev)"
+
+on:
+  push:
+    branches: [ develop ]
+
+env:
+  GCP_PROJECT_ID: "cloudsentinel-dev"
+  GCP_REGION: "us-central1"
+  GAR_REPOSITORY: "cloudsentinel-docker"
+  IMAGE_NAME: "core-api"
+  GKE_CLUSTER: "cloudsentinel-dev-gke"
+
+jobs:
+  build-and-deploy-dev:
+    name: "🚀 Build, Push & Deploy to Dev"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Best practice: Authenticate to GCP using Workload Identity Federation
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          # In real production, specify workload_identity_provider & service_account
+          credentials_json: ${{ secrets.GCP_SA_KEY_DEV }}
+
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev --quiet
+
+      - name: Build & Tag Container Image
+        run: |
+          IMAGE_TAG="${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GAR_REPOSITORY }}/${{ env.IMAGE_NAME }}:dev-${{ github.sha }}"
+          docker build -f docker/Dockerfile -t $IMAGE_TAG .
+          docker push $IMAGE_TAG
+          echo "DEPLOYED_IMAGE=$IMAGE_TAG" >> $GITHUB_ENV
+
+      - name: Connect to Dev GKE Cluster
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ${{ env.GKE_CLUSTER }}
+          location: ${{ env.GCP_REGION }}
+
+      - name: Deploy via Kustomize Dev Overlay
+        run: |
+          cd k8s/overlays/dev
+          kustomize edit set image gcr.io/cloudsentinel-prod/core-api:latest=${{ env.DEPLOYED_IMAGE }}
+          kustomize build . | kubectl apply -f -
+
+      - name: Verify Rollout Status
+        run: |
+          kubectl rollout status deployment/cloudsentinel-core-dev -n cloudsentinel-dev --timeout=120s

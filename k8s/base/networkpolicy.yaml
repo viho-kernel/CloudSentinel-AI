@@ -1,0 +1,58 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cloudsentinel-zero-trust-policy
+  namespace: cloudsentinel
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: cloudsentinel
+  policyTypes:
+  - Ingress
+  - Egress
+
+  # Zero-Trust Ingress Rules
+  ingress:
+  # 1. Allow traffic from ingress controller
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 8080
+
+  # 2. Allow metrics scraping from monitoring namespace
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: monitoring
+    ports:
+    - protocol: TCP
+      port: 8080
+
+  # Zero-Trust Egress Rules
+  egress:
+  # 1. Allow internal cluster DNS resolution
+  - to:
+    - namespaceSelector: {}
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+
+  # 2. Allow outbound HTTPS traffic (for Google Gemini API and external dependencies)
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+        except:
+        - 10.0.0.0/8
+        - 172.16.0.0/12
+        - 192.168.0.0/16
+    ports:
+    - protocol: TCP
+      port: 443

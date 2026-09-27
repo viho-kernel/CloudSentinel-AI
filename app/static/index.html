@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CloudSentinel AI - DevSecOps & Cloud Security Platform</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Header / Navigation -->
+  <header class="app-header">
+    <div class="logo-group">
+      <div class="shield-icon">🛡️</div>
+      <div>
+        <h1 class="brand-title">CloudSentinel <span class="ai-badge">AI</span></h1>
+        <p class="brand-subtitle">Autonomous Cloud Security & DevSecOps Intelligence</p>
+      </div>
+    </div>
+    <div class="env-group">
+      <span class="env-tag" id="env-badge">ENV: DEV</span>
+      <span class="ai-status-tag" id="ai-status-badge">AI: INITIALIZING</span>
+      <a href="/docs" target="_blank" class="api-docs-btn">Swagger API Docs ↗</a>
+      <a href="/metrics" target="_blank" class="metrics-btn">Prometheus /metrics ↗</a>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="dashboard-grid">
+    <!-- Top Stat Row -->
+    <section class="metrics-bar">
+      <div class="metric-card">
+        <div class="metric-label">Security Posture</div>
+        <div class="metric-value" id="posture-score">--</div>
+        <div class="metric-sub" id="posture-status">Awaiting scan...</div>
+      </div>
+      <div class="metric-card border-critical">
+        <div class="metric-label">Critical Findings</div>
+        <div class="metric-value text-critical" id="stat-critical">0</div>
+        <div class="metric-sub">Blockers in CI/CD Gate</div>
+      </div>
+      <div class="metric-card border-high">
+        <div class="metric-label">High Severity</div>
+        <div class="metric-value text-high" id="stat-high">0</div>
+        <div class="metric-sub">Privilege escalation & leaks</div>
+      </div>
+      <div class="metric-card border-med">
+        <div class="metric-label">Med / Low Severity</div>
+        <div class="metric-value text-med" id="stat-med">0</div>
+        <div class="metric-sub">Best-practice violations</div>
+      </div>
+    </section>
+
+    <!-- Scanner & Studio Section -->
+    <section class="studio-section">
+      <div class="panel-header">
+        <div class="tab-buttons">
+          <button class="tab-btn active" data-type="dockerfile">🐳 Dockerfile</button>
+          <button class="tab-btn" data-type="kubernetes">☸️ Kubernetes (K8s)</button>
+          <button class="tab-btn" data-type="terraform">☁️ Terraform (GCP)</button>
+        </div>
+        <div class="action-buttons">
+          <button id="load-sample-btn" class="btn btn-secondary">⚡ Load Vulnerable Sample</button>
+          <button id="run-scan-btn" class="btn btn-primary">🔍 Run DevSecOps Scan</button>
+        </div>
+      </div>
+
+      <div class="editor-container">
+        <div class="editor-header">
+          <span id="editor-filename">Dockerfile</span>
+          <span class="editor-hint">Paste your configuration or click "Load Vulnerable Sample"</span>
+        </div>
+        <textarea id="iac-editor" placeholder="Paste your Dockerfile, Kubernetes YAML, or Terraform script here..."></textarea>
+      </div>
+    </section>
+
+    <!-- Results Section -->
+    <section class="results-section">
+      <div class="panel-header">
+        <h2 class="panel-title">🛡️ Security Audit Findings</h2>
+        <span class="gate-status" id="gate-status-pill">STATUS: READY</span>
+      </div>
+
+      <div id="findings-container" class="findings-list">
+        <div class="empty-state">
+          <div class="empty-icon">🔎</div>
+          <h3>No Scans Executed Yet</h3>
+          <p>Select an IaC type above, click <strong>Load Vulnerable Sample</strong>, then hit <strong>Run DevSecOps Scan</strong> to see automated CIS benchmark analysis & Gemini AI remediation.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- AI Remediation Modal -->
+  <div id="ai-modal" class="modal-backdrop hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span class="modal-spark">✨</span>
+          <h2 id="modal-title">Gemini AI Autonomous Remediation</h2>
+        </div>
+        <button id="close-modal-btn" class="close-btn">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="ai-box">
+          <h3>⚡ Technical Risk Explanation</h3>
+          <p id="ai-explanation">Analyzing vulnerability...</p>
+        </div>
+
+        <div class="ai-box danger-box">
+          <h3>🚨 Real-World Exploitation Scenario</h3>
+          <p id="ai-attack">Mapping threat vector...</p>
+        </div>
+
+        <div class="ai-box diff-box">
+          <div class="diff-header">
+            <h3>📝 Unified Code Patch (Diff)</h3>
+            <span class="badge" id="ai-cve-badge">CWE / CIS</span>
+          </div>
+          <pre><code id="ai-diff">Generating diff...</code></pre>
+        </div>
+
+        <div class="ai-box code-box">
+          <div class="diff-header">
+            <h3>✅ Remediated Production Code</h3>
+            <button id="copy-code-btn" class="btn btn-small">📋 Copy Code</button>
+          </div>
+          <pre><code id="ai-patched">Applying fix...</code></pre>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <span class="confidence-text" id="ai-confidence">Confidence: 98%</span>
+        <button id="close-modal-bottom-btn" class="btn btn-primary">Done & Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
