@@ -36,9 +36,9 @@ if ($LASTEXITCODE -eq 0) {
 
 Write-Host "`n------------------------------------------------------" -ForegroundColor Cyan
 Write-Host "🚀 Starting CloudSentinel AI Server..." -ForegroundColor Green
-Write-Host "👉 Web Dashboard:    http://127.0.0.1:8080" -ForegroundColor White
-Write-Host "👉 Swagger API Docs: http://127.0.0.1:8080/docs" -ForegroundColor White
-Write-Host "👉 Prometheus:       http://127.0.0.1:8080/metrics" -ForegroundColor White
+Write-Host "👉 Web Dashboard:    http://127.0.0.1:8000" -ForegroundColor White
+Write-Host "👉 Swagger API Docs: http://127.0.0.1:8000/docs" -ForegroundColor White
+Write-Host "👉 Prometheus:       http://127.0.0.1:8000/metrics" -ForegroundColor White
 Write-Host "------------------------------------------------------`n" -ForegroundColor Cyan
 
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8080 --reload
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
